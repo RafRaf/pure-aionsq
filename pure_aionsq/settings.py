@@ -1,0 +1,1 @@
+loggerName = 'pure_nsq'
