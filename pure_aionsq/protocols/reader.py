@@ -23,12 +23,15 @@ class ReaderProtocol(BaseProtocol):
         :return:
         """
         def callback(task):
-            command_type = CommandType.finish if task.result() else CommandType.requeue
 
             # Make a command to finish or requeue messages
             #
-            command = Command(command_type)
-            transport.write(command.gen_command(message_id))
+            if task.result():
+                command = Command(CommandType.finish)
+                transport.write(command.gen_command(message_id))
+            else:
+                command = Command(CommandType.requeue)
+                transport.write(command.gen_command(message_id, '30'))
         return callback
 
     def data_received(self, data):
