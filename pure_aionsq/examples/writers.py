@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
-from connector import connector_factory
-from protocols.writer import WriterProtocol
+from pure_aionsq.connector import connector_factory
+from pure_aionsq.protocols.writer import WriterProtocol
 
-from settings import loggerName
+from pure_aionsq.settings import loggerName
 
 logger = logging.getLogger(loggerName)
 

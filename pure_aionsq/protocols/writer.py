@@ -1,8 +1,8 @@
 import logging
 
-from command import Command, CommandType
-from protocols.base import BaseProtocol
-from settings import loggerName
+from pure_aionsq.command import Command, CommandType
+from pure_aionsq.protocols.base import BaseProtocol
+from pure_aionsq.settings import loggerName
 
 logger = logging.getLogger(loggerName)
 

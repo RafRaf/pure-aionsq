@@ -1,8 +1,8 @@
 import logging
-from nsq import NSQ
-from reader import Reader
+from pure_aionsq.nsq import NSQ
+from pure_aionsq.reader import Reader
 
-from settings import loggerName
+from pure_aionsq.settings import loggerName
 
 logger = logging.getLogger(loggerName)
 logger.setLevel(logging.DEBUG)

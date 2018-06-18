@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
-from command import Command, CommandType
-from protocols.reader import ReaderProtocol
+from pure_aionsq.command import Command, CommandType
+from pure_aionsq.protocols.reader import ReaderProtocol
 
-from settings import loggerName
+from pure_aionsq.settings import loggerName
 
 logger = logging.getLogger(loggerName)
 

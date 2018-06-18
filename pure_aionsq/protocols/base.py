@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from settings import loggerName
+from pure_aionsq.settings import loggerName
 
 logger = logging.getLogger(loggerName)
 
