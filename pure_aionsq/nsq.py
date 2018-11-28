@@ -42,7 +42,7 @@ class NSQ:
             async with session.get(f'{self.lookup}/nodes') as response:
                 if response.status == 200:
                     raw_data = await response.json()
-                    result = [(item['broadcast_address'], item['http_port']) for item in raw_data['producers']]
+                    result = [(item['broadcast_address'], item['tcp_port']) for item in raw_data['producers']]
                 else:
                     result = []
         return result
