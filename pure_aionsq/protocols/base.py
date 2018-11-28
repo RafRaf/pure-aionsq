@@ -1,9 +1,6 @@
 import asyncio
-import logging
 
-from pure_aionsq.settings import loggerName
-
-logger = logging.getLogger(loggerName)
+from pure_aionsq.log import logger
 
 
 class BaseProtocol(asyncio.Protocol):
