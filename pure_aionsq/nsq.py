@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import json
 
 from pure_aionsq.log import logger
 from pure_aionsq.command import Command, CommandType
@@ -7,12 +8,13 @@ from pure_aionsq.protocols.reader import ReaderProtocol
 
 
 class NSQ:
-    def __init__(self, lookupd=None, lookupd_heartbeat=5):
+    def __init__(self, lookupd, identify_options=None, lookupd_heartbeat=5):
         self.loop = None
         self.readers = list()
         self.lookup = lookupd
         self.lookupd_heartbeat = lookupd_heartbeat
         self.connections = dict()
+        self.identify_options = identify_options or dict()
 
     async def shutdown(self):
         logger.debug('Shutdown the application..')
@@ -48,7 +50,8 @@ class NSQ:
         return result
 
     async def dispatcher(self):
-        command = Command(CommandType.subscribe)
+        subscribe = Command(CommandType.subscribe)
+        identify = Command(CommandType.identify)
 
         while True:
             new_connections = await self._get_lookupd_data()
@@ -64,8 +67,16 @@ class NSQ:
                             port,
                         )
                         self.connections[connection] = (transport, protocol)
-                        message = command.get_message(reader.topic, reader.channel)
-                        transport.write(message)
+
+                        # Send `IDENTIFY` command
+                        #
+                        transport.write(identify.get_message(
+                            payload=json.dumps(self.identify_options).encode(),
+                        ))
+
+                        # Send `SUB` command
+                        #
+                        transport.write(subscribe.get_message(reader.topic, reader.channel))
 
             logger.debug(f'*** {new_connections} ***')
 

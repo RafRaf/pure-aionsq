@@ -49,10 +49,6 @@ class ReaderProtocol(BaseProtocol):
             # Add finalisation callback (finish or requeue)
             #
             task.add_done_callback(self._finish_callback(self.transport, message.message_id))
-
-            # Ready for a next message
-            #
-            self.transport.write(Command(CommandType.ready).get_message('1'))
         elif frame_type == FrameType.response:
             if message.is_heartbeat:
                 self.transport.write(Command(CommandType.nop).get_message())
@@ -63,6 +59,8 @@ class ReaderProtocol(BaseProtocol):
         elif frame_type == FrameType.error:
             logging.info(message_data)
 
+        # Ready for a next message
+        #
         rdy = Command(CommandType.ready).get_message('1')
         self.transport.write(rdy)
         logging.warning(rdy)
