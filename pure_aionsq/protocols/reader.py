@@ -2,12 +2,8 @@ import asyncio
 import logging
 
 from pure_aionsq.command import Command, CommandType
-from pure_aionsq.message import Message, FrameType
+from pure_aionsq.message import FrameType, Message
 from pure_aionsq.protocols.base import BaseProtocol
-
-from pure_aionsq.settings import loggerName
-
-logger = logging.getLogger(loggerName)
 
 
 class ReaderProtocol(BaseProtocol):
@@ -28,10 +24,10 @@ class ReaderProtocol(BaseProtocol):
             #
             if task.result():
                 command = Command(CommandType.finish)
-                transport.write(command.gen_command(message_id))
+                transport.write(command.get_message(message_id))
             else:
                 command = Command(CommandType.requeue)
-                transport.write(command.gen_command(message_id, '30'))
+                transport.write(command.get_message(message_id, '30'))
         return callback
 
     def data_received(self, data):
@@ -45,7 +41,7 @@ class ReaderProtocol(BaseProtocol):
 
         # We're have a new frame
         #
-        logger.warning('Data received: {}, {}'.format(frame_type, message_data))
+        logging.warning('Data received: {}, {}'.format(frame_type, message_data))
 
         if frame_type == FrameType.message:
             task = asyncio.ensure_future(self.message_handler(message_data), loop=self.loop)
@@ -56,17 +52,17 @@ class ReaderProtocol(BaseProtocol):
 
             # Ready for a next message
             #
-            self.transport.write(Command(CommandType.ready).gen_command('1'))
+            self.transport.write(Command(CommandType.ready).get_message('1'))
         elif frame_type == FrameType.response:
             if message.is_heartbeat:
-                self.transport.write(Command(CommandType.nop).gen_command())
+                self.transport.write(Command(CommandType.nop).get_message())
             # else:
-            #     rdy = Command(CommandType.ready).gen_command('1')
+            #     rdy = Command(CommandType.ready).get_message('1')
             #     self.transport.write(rdy)
             #     logging.warning(rdy)
         elif frame_type == FrameType.error:
             logging.info(message_data)
 
-        rdy = Command(CommandType.ready).gen_command('1')
+        rdy = Command(CommandType.ready).get_message('1')
         self.transport.write(rdy)
         logging.warning(rdy)

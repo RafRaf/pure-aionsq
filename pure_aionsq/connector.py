@@ -1,9 +1,4 @@
-import logging
 from functools import partial
-
-from settings import loggerName
-
-logger = logging.getLogger(loggerName)
 
 
 class Connection:

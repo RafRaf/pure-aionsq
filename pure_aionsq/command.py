@@ -1,5 +1,5 @@
-from enum import Enum
 import struct
+from enum import Enum
 from typing import Union
 
 
@@ -34,7 +34,7 @@ class Command:
             return str(value).encode()
         return value
 
-    def gen_command(self, *params: Union[str, bytes], payload: Union[str, bytes]=None) -> bytes:
+    def get_message(self, *params: Union[str, bytes], payload: Union[str, bytes]=None) -> bytes:
         """
 
         :param params: arguments like topic/channel

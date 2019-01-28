@@ -1,29 +1,23 @@
+import aiohttp
 import asyncio
-import logging
 
+from pure_aionsq.log import logger
 from pure_aionsq.command import Command, CommandType
 from pure_aionsq.protocols.reader import ReaderProtocol
 
-from pure_aionsq.settings import loggerName
-
-logger = logging.getLogger(loggerName)
-
 
 class NSQ:
-    def __init__(self):
+    def __init__(self, lookupd=None, lookupd_heartbeat=5):
         self.loop = None
         self.readers = list()
+        self.lookup = lookupd
+        self.lookupd_heartbeat = lookupd_heartbeat
         self.connections = dict()
 
     async def shutdown(self):
         logger.debug('Shutdown the application..')
 
         self.loop.shutdown_asyncgens()
-
-    async def dispatcher(self):
-        while True:
-            await asyncio.sleep(3)
-            logger.debug('Idle')
 
     def register_reader(self, reader):
         """
@@ -33,31 +27,57 @@ class NSQ:
         """
         self.readers.append(reader)
 
-    def _get_protocol(self, reader):
+    def _get_protocol_class(self, reader):
         return lambda: ReaderProtocol(self.loop, reader.message_handler)
 
-    def _init_readers(self):
-        """
-        Initialize all registered readers
-        """
-        logger.warning(self.readers)
+    def _create_connection(self, reader, address, port=4150):
+        yield self.loop.create_connection(
+            self._get_protocol_class(reader),
+            address,
+            port,
+        )
 
+    async def _get_lookupd_data(self):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'{self.lookup}/nodes') as response:
+                if response.status == 200:
+                    raw_data = await response.json()
+                    result = [(item['broadcast_address'], item['tcp_port']) for item in raw_data['producers']]
+                else:
+                    result = []
+        return result
+
+    async def dispatcher(self):
         command = Command(CommandType.subscribe)
 
-        for reader in self.readers:
-            for address in reader.nsqd_tcp_addresses:
-                transport, protocol = yield from self.loop.create_connection(
-                    self._get_protocol(reader),
-                    address,
-                    4150,
-                )
+        while True:
+            new_connections = await self._get_lookupd_data()
 
-                self.connections[address] = (transport, protocol)
+            for connection in new_connections:
+                hostname, port = connection
 
-                logger.debug(f'Registered reader (topic="{reader.topic}", channel="{reader.channel}")..')
+                if connection not in self.connections:
+                    for reader in self.readers:
+                        transport, protocol = await self.loop.create_connection(
+                            self._get_protocol_class(reader),
+                            hostname,
+                            port,
+                        )
+                        self.connections[connection] = (transport, protocol)
+                        message = command.get_message(reader.topic, reader.channel)
+                        transport.write(message)
 
-                message = command.gen_command(reader.topic, reader.channel)
-                transport.write(message)
+            logger.debug(f'*** {new_connections} ***')
+
+            await asyncio.sleep(self.lookupd_heartbeat)
+
+            # Check for closing connections ****
+            #
+            self.connections = {
+                addr: item
+                for addr, item in self.connections.items()
+                if not item[0].is_closing()
+            }
 
     def run(self):
         """
@@ -66,12 +86,7 @@ class NSQ:
         """
         self.loop = asyncio.new_event_loop()
 
-        logging.debug('The Application is running..')
-
-        # Instantiate all connections
-        #
-        for reader in self._init_readers():
-            self.loop.run_until_complete(reader)
+        logger.debug('The Application is running..')
 
         try:
             self.loop.run_until_complete(self.dispatcher())
