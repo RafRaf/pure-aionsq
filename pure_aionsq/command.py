@@ -50,6 +50,10 @@ class Command:
         # Construct a base message signature
         #
         params_data = b' '.join((self._converter(param) for param in params))
-        cmd = bytearray(self.command_type.value + b' ' + params_data + b'\n')
+
+        if params_data:
+            cmd = bytearray(self.command_type.value + b' ' + params_data + b'\n')
+        else:
+            cmd = bytearray(self.command_type.value + b'\n')
 
         return cmd + data if data else cmd

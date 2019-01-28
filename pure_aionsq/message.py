@@ -38,9 +38,11 @@ class Message:
         response_handler(frame_data)
 
     def _parse_response(self, frame_data: bytes):
-        if frame_data == b'_heartbeat_':
+        if frame_data.startswith(b'OK'):
+            self.message_body = 'OK'
+        elif frame_data.startswith(b'_heartbeat_'):
             self.is_heartbeat = True
-            self.message_body = '* heartbeat *'
+            self.message_body = '❤ Heartbeat ❤'
         else:
             self.message_body = 'Something'  # TODO: what is it?
 

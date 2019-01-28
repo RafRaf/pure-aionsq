@@ -1,14 +1,16 @@
-from pure_aionsq import log
+from pure_aionsq.log import logger
 from pure_aionsq.nsq import NSQ
 from pure_aionsq.reader import Reader
 
 
 async def handler(message: bytes):
-    log.warning("I've got a message: %s", message.decode())
+    logger.warning("I've got a message: %s", message.decode())
     return True
 
 if __name__ == '__main__':
-    nsq = NSQ(lookupd='http://nsqlookupd:4161')
+    nsq = NSQ(lookupd='http://nsqlookupd:4161', identify_options={
+        'msg_timeout': 100000,
+    })
 
     reader = Reader(
         topic='test_topic', channel='test_channel',
